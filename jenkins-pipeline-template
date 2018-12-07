@@ -1,0 +1,98 @@
+properties([
+    buildDiscarder(logRotator(
+        artifactDaysToKeepStr: '',
+        artifactNumToKeepStr: '',
+        daysToKeepStr: '',
+        numToKeepStr: '10')),
+    disableConcurrentBuilds(),
+    parameters([choice(choices: "dev\nstage\n", description: '', name: 'BRANCH_NAME')]),
+    pipelineTriggers([pollSCM('H/3 * * * *')])
+])
+
+String repoUrl = 'https://github.com/{{example}}.git'
+String repoCreds = '617d9bf8-c185-xxx-xxxxxx-xxx-xxxxxx'
+String appName = "project-name-${params.BRANCH_NAME}"
+String pm2Name = "Project Name (${params.BRANCH_NAME})"
+String NODE_ENV = "${params.BRANCH_NAME}"
+String appParams = 'ecosystem.json'
+List servers = ['example1.com']
+
+switch("${params.BRANCH_NAME}") {
+  case "stage":
+    appPort = '1502'
+    break
+  default:
+    appPort = '1500'
+    break
+}
+
+def emailNotify() {
+    mail(to: 'user1@gmail.com user2@gmail.com',
+          subject: "${currentBuild.result}: pipeline ${currentBuild.fullDisplayName}",
+          body: "Build ${env.BUILD_URL} has result ${currentBuild.result}")
+}
+
+node {
+    currentBuild.result = "SUCCESS"
+
+    try {
+        stage('Clone Git source') {
+            git(credentialsId: repoCreds,
+                url: repoUrl,
+                branch: "${params.BRANCH_NAME}")
+        }
+
+        stage('SonarQube analysis') {
+            def scannerHome = tool 'SonarQube Scanner 3.2';
+            withSonarQubeEnv('sonarqube.example.com') {
+                sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${appName} -Dsonar.projectName=${appName} -Dsonar.projectVersion=1.0 -Dsonar.language=js -Dsonar.sources=. -Dsonar.exclusions=\"node_modules/**/*\" "
+            }
+        }
+
+        stage("SonarQube QualityGate") {
+            timeout(time: 5, unit: 'MINUTES') {
+               def qg = waitForQualityGate()
+               if (qg.status != 'OK') {
+                 error "Pipeline aborted due to QualityGate failure: ${qg.status}"
+               }
+            }
+        }
+
+        stage('Generate ecosystem.json file') {
+            writeFile(file: appParams, text: """{
+      "name"               : "${pm2Name}",
+      "script"             : "dist/main.js",
+      "exec_interpreter"   : "/usr/bin/node",
+      "log_date_format"    : "DD-MM-YYYY HH:mm",
+      "error_file"         : "logs/${appName}.stderr.log",
+      "out_file"           : "logs/${appName}.stdout.log",
+      "pid_file"           : "${appName}.pid",
+      "max_memory_restart" : "512M",
+      "autorestart"        : true,
+      "merge_logs"         : true,
+      "max_restarts"       : 5,
+      "restart_delay"      : 1000,
+      "env" : {
+         NODE_ENV: "${NODE_ENV}",
+         PORT:     "${appPort}"
+      }
+}
+""")
+        println(">>> ${appParams} file successfully created.")
+        }
+
+        stage('Deploy project(s)') {
+            for (String server : servers) {
+            println(">>> Deploying on ${server}")
+                sh("rsync -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2218 -i ~/.ssh/deploy_rsa' -az ${WORKSPACE}/ecosystem.json deploy@${server}:~/projects/${params.BRANCH_NAME}/${appName}/ecosystem.json")
+                sh("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2218 -i ~/.ssh/deploy_rsa deploy@${server} 'cd \"projects/${params.BRANCH_NAME}/${appName}\"; git checkout package-lock.json; git pull origin \"${params.BRANCH_NAME}\"; source .env; npm i && node_modules/.bin/sequelize db:migrate --env \"${NODE_ENV}\"; npm run build' ")
+                sh("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2218 -i ~/.ssh/deploy_rsa deploy@${server} 'cd \"projects/${params.BRANCH_NAME}/${appName}\"; source .env && pm2 -s restart \"${appParams}\"' ")
+            }
+        }
+    } catch (err) {
+        currentBuild.result = "FAILURE"
+        throw err
+    } finally {
+        emailNotify()
+    }
+}
