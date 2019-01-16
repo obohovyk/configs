@@ -1,0 +1,12 @@
+Server: ldap://ipa.example.com
+root DN: dc=example,dc=com
+User search base: cn=users,cn=accounts
+User search filter: (&(uid={0})(memberOf=cn=jenkins-users,cn=groups,cn=accounts,dc=example,dc=com))
+Group search base: cn=groups,cn=accounts
+Group search filter: (& (cn={0})(|(objectclass=posixGroup)(objectclass=ipausergroup)))
+
+Group membership -> Search for LDAP groups containing user 
+Manager DN: uid=ldap_search,cn=users,cn=accounts,dc=example,dc=com
+
+Display Name LDAP attribute: displayname
+Email Address LDAP attribute: mail
