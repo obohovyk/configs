@@ -1,0 +1,24 @@
+sonar.jdbc.username=sonar
+sonar.jdbc.password=pa$$w0rd
+sonar.jdbc.url=jdbc:mysql://localhost:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&maxAllowedPacket=268435456
+sonar.web.javaOpts=-server -Dcom.ibm.jsse2.overrideDefaultTLS=true
+sonar.web.host=127.0.0.1
+sonar.web.port=9000
+
+sonar.security.realm=LDAP
+sonar.security.savePassword=false
+sonar.authenticator.createUsers=true
+sonar.security.localUsers=admin
+ldap.authentication=simple
+ldap.url=ldap://idm.example.com
+ldap.bindDn=uid=ldap_search,cn=users,cn=accounts,dc=example,dc=com
+ldap.bindPassword=pa$$w0rd
+
+ldap.user.baseDn=cn=users,cn=accounts,dc=example,dc=com
+ldap.user.request=(&(objectClass=inetOrgPerson)(uid={login}))
+ldap.user.realNameAttribute=cn
+ldap.user.emailAttribute=mail
+
+ldap.group.baseDn=cn=groups,cn=compat,dc=example,dc=com
+ldap.group.request=(&(objectClass=posixGroup)(memberUid={uid}))
+ldap.group.idAttribute=cn
