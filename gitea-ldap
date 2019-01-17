@@ -1,0 +1,10 @@
+Host:             idm.example.com
+Port:             389
+Bind DN:          uid=ldap_search,cn=users,cn=accounts,dc=example,dc=com
+Bind Password:    ps$$w0rd
+User Search Base: cn=accounts,dc=example,dc=com
+User Filter:      (&(objectClass=inetOrgPerson)(uid=%s))
+Admin Filter:     (memberOf=cn=admins,cn=groups,cn=accounts,dc=example,dc=com)
+First Name Attr.: givenName
+Surname Attr.:    sn
+Email Attr.:      mail
