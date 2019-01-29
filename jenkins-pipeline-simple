@@ -30,14 +30,13 @@ node {
     			}
 			}
         }
+		stage('Build APK') {
+			sh("./gradlew clean ; ./gradlew assembleStage")
+		}
 
-	stage('Build APK') {
-		sh("./gradlew clean ; ./gradlew assembleStage")
-	}
-
-	stage('Upload APK') {
-		sh("./gradlew crashlyticsUploadDistributionStage")
-	}
+		stage('Upload APK') {
+			sh("./gradlew crashlyticsUploadDistributionStage")
+		}
     }
 } catch (err) {
 	currentBuild.result = "FAILURE"
