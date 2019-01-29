@@ -1,0 +1,48 @@
+String appName = "example-android"
+
+def emailNotify() {
+	mail(to: 'email@gmail.com',
+		subject: "${currentBuild.result}: pipeline ${currentBuild.fullDisplayName}",
+		body: "Build ${env.BUILD_URL} has result ${currentBuild.result}")
+}
+
+node {
+	currentBuild.result = "SUCCESS"
+
+	try {
+		stage('Clone Git source')	{
+            git branch: "${params.BRANCH_NAME}", 
+            credentialsId: '617d9bf8-c185-4a2b-xxxx-xxxxxxxxxxx', 
+            url: 'https://gitlab.example.com/example/example-android.git'
+        }
+            stage('SonarQube analysis')	{
+             def scannerHome = tool 'SonarQube Scanner 3.2';
+              withSonarQubeEnv('sonarqube.example.com') {
+                sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${appName} -Dsonar.projectName=${appName} -Dsonar.projectVersion=1.0 -Dsonar.sources=app/src/main/java -Dsonar.sourceEncoding=UTF-8"
+              }
+        	}
+
+        stage("SonarQube QualityGate")	{
+            timeout(time: 5, unit: 'MINUTES')	{
+               def qg = waitForQualityGate()
+                if (qg.status != 'OK')	{
+                 error "Pipeline aborted due to QualityGate failure: ${qg.status}"
+        		}
+    		}
+        }
+
+		stage('Build APK') {
+			sh("./gradlew clean ; ./gradlew assembleStage")
+		}
+
+		stage('Upload APK') {
+			sh("./gradlew crashlyticsUploadDistributionStage")
+		}
+	} 
+} catch (err) {
+	currentBuild.result = "FAILURE"
+	throw err	
+} finally {
+	emailNotify()
+	}
+}
