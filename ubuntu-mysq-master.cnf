@@ -1,9 +1,9 @@
 [mysqld_safe]
 socket		= /var/run/mysqld/mysqld.sock
-nice		  = 0
+nice		 = 0
 
 [mysqld]
-user		  = mysql
+user		 = mysql
 pid-file	= /var/run/mysqld/mysqld.pid
 socket		= /var/run/mysqld/mysqld.sock
 port		  = 3306
@@ -39,7 +39,7 @@ log-queries-not-using-indexes
 
 server-id		      = 1
 log_bin			      = /var/log/mysql/mysql-bin.log
-expire_logs_days	= 7
+expire_logs_days	= 10
 max_binlog_size		= 128M
 binlog_format		  = ROW
 #binlog_do_db		  = include_database_name
