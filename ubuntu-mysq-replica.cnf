@@ -12,7 +12,7 @@ datadir		= /var/lib/mysql
 tmpdir		= /tmp
 lc-messages-dir	= /usr/share/mysql
 skip-external-locking
-max_connections = 256
+max_connections = 172
 
 bind-address = 172.18.0.3
 
