@@ -1,0 +1,32 @@
+### Build only on Master branch
+image: docker:latest
+
+services:
+  - docker:dind
+
+variables:
+  BRANCH: ${CI_COMMIT_NAME}
+  CI_REGISTRY: registry.gitlab.com/obohovyk/dotnet-cptn
+
+stages:
+ - build
+ - test
+
+before_script:
+ - docker login -u obohovyk -p "$CI_TOKEN" registry.gitlab.com
+
+build_project:
+  stage: build
+  script:
+    - docker build -t "$CI_REGISTRY" .
+    - docker push "$CI_REGISTRY"
+  only:
+    - master
+
+test_project:
+  stage: test
+  script:
+    - docker pull "$CI_REGISTRY"
+    - docker run -d --name=$BRANCH -p 5000:5000 -i "$CI_REGISTRY"
+  only:
+    - master
