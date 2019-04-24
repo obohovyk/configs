@@ -53,12 +53,14 @@ http {
     open_file_cache_min_uses 2;
     open_file_cache_errors off;
 
-    gzip             on;
-    gzip_comp_level  4;
-    gzip_min_length  1000;
-    gzip_disable     "MSIE [1-6]\.";
-    gzip_types       text/plain text/css text/js text/javascript application/javascript text/xml application/json;
-    gzip_buffers     32 4k;
+	etag on;
+
+	gzip on;
+	gzip_vary on;
+	gzip_comp_level 6;
+	gzip_buffers 16 8k;
+	gzip_http_version 1.1;
+	gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;
 
     # limit_conn_zone $binary_remote_addr zone=limitconn:10m;
     # limit_conn_log_level warn;
@@ -70,6 +72,7 @@ http {
 
     proxy_cache_path cache/ keys_zone=auth_cache:15m;
 
+    ### UPDATE User-Agent List ! ###
     map $http_user_agent $bad_agent {
         default         0;
         "~curl"         1;
