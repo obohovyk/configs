@@ -27,8 +27,8 @@ server {
 
         alias $admin_path/dist;
 
-        location ~* \.(jpe?g|png|gif|svg|ico)$ {
-            expires 1h;
+        location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico)$ {
+            add_header Cache-Control "public";
             access_log off;
         }
     }
