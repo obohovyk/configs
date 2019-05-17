@@ -9,7 +9,7 @@ server {
 
     server_name example.com;
 
-    root /home/app/bundle-zup/dist;
+    root /home/example;
 
     access_log /var/log/nginx/example.com_access.log;
     error_log /var/log/nginx/example.com_error.log;
