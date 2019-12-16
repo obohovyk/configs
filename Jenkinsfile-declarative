@@ -1,0 +1,58 @@
+def username = 'Jenkins'
+
+pipeline {
+    agent none
+    environment {
+        CI = 'true'
+    }
+    options {
+        buildDiscarder(logRotator(artifactDaysToKeepStr: '1', artifactNumToKeepStr: '1', daysToKeepStr: '5', numToKeepStr: '10'))
+    }
+    stages {
+        stage('Welcome') {
+            agent none
+//            environment {}
+            steps {
+                echo "Welcome, $username"
+            }
+        }
+        stage('Test build') {
+            agent {
+                docker {
+                    image 'node:10-alpine'
+                    label 'dind'
+                }
+            }
+//            environment {}
+            steps {
+                sh 'node --version'
+//                stash includes: '**/output/${APP_NAME}-${APP_VERSION}.tar.gz', excludes:'**/output/${APP_NAME}-${APP_VERSION}.tar.xz', name: 'artifact'
+//                stash includes: '**/file.properties', name: 'properties'
+            }
+//            post {
+//                success { archiveArtifacts artifacts: "${APP_NAME}-${APP_VERSION}.tar.gz", fingerprint: true }
+//                failure {}
+//            }
+        }
+        stage('Deploy production') {
+            agent {
+                label 'dind'
+            }
+//            environment {}
+            when {
+                branch 'production'
+                environment name: 'NODE_ENV', value: 'production'
+            }
+            steps {
+                echo 'Deploying on production using node:'
+                sh 'node --version'
+                unstash 'artifact'
+                unstash name: 'properties'
+            }
+        }
+//    post {
+//        success { mail }
+//        failure { mail }
+//    }
+    }
+}
