@@ -1,0 +1,110 @@
+def option(String optionParam) {
+    sh ''
+    script {
+        val = sh(returnStdout: true, script: "").trim()
+    }
+}
+
+pipeline {
+    agent none
+    environment {
+    }
+    options {
+        buildDiscarder(logRotator(artifactDaysToKeepStr: '1', artifactNumToKeepStr: '1', daysToKeepStr: '5', numToKeepStr: '10'))
+    }
+    stages {
+        stage('Build') {
+            agent {
+                docker {
+                    image 'node:10.16.3'
+                    label 'dind'
+                }
+            }
+            environment {
+                APP_VERSION = sh(returnStdout: true, script: 'bash script.sh').trim()
+            }
+            steps {
+                sh "Build steps..."
+                tar cvzf build.tar.gz build/.
+                stash includes: "build-${APP_VERSION}.tar.gz", name: 'artifact' 
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: "build-${APP_VERSION}.tar.gz", fingerprint: true
+                }
+                failure {
+                    echo 'Build and unit stage failed.'
+                }
+            }
+        }
+        stage ('Build, Push Docker Image to DTR') {
+            agent {
+                label 'dind'
+            }
+            environment {
+            }
+            steps {
+              unstash name: artifact;
+            }
+            post {
+            }
+        }
+        stage('Run Test and scan') {
+            parallel {
+                stage('Run Scan step 1') {
+                    agent {
+                        docker {
+                            image ''
+                            label 'dind'
+                        }
+                    }
+                    environment {
+                    }
+                    steps {
+
+                    }
+                    post {
+                        success {
+                            echo "Run Scan step 1 stage completed."
+                        }
+                        failure {
+                            echo "Run Scan step 1 stage failed."
+                        }
+                    }
+                }
+                stage('Run Scan step 2') {
+                    agent {
+                        docker {
+                            image ''
+                            label 'dind'
+                        }
+                    }
+                    environment {
+                    }
+                    steps {
+
+                    }
+                    post {
+                        success {
+                            echo "Run Scan step 2 stage completed."
+                        }
+                        failure {
+                            echo "Run Scan step 2 stage failed."
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Build completed.'
+            emailext()
+        }
+        failure {
+            echo 'Build failed.'
+            emailext()
+            slackSend()
+        }
+    }
+}
