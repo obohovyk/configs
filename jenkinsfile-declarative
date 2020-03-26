@@ -22,6 +22,7 @@ pipeline {
             }
             environment {
                 APP_VERSION = sh(returnStdout: true, script: 'bash script.sh').trim()
+                APP_NAME = "${env.GIT_URL.replaceFirst(/^.*\/([^\/]+?).git$/, '$1')}"
             }
             steps {
                 sh "Build steps..."
