@@ -23,7 +23,7 @@ gitlab_rails['backup_keep_time'] = 604800
 
 gitlab_rails['rack_attack_git_basic_auth'] = {
    'enabled' => true,
-   'ip_whitelist' => ["127.0.0.1","93.76.51.138","77.120.128.213"],
+   'ip_whitelist' => ["127.0.0.1","127.0.0.2","127.0.0.3"],
    'maxretry' => 6,
    'findtime' => 60,
    'bantime' => 3600
